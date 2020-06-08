@@ -1,0 +1,141 @@
+
+Installaion shell script :
+
+Step 1 :
+
+create a domain name (xyz.com or subdomain live.xyz.com)
+
+Step 2 :
+
+goto digital ocean create a droplet with following configuration :
+
+ubuntu 16.4.x os 64 bit
+4 core processor / 8 gb ram
+160 gb harddisk ssd
+5tb monthly bandwith 
+
+Copy the server ipv4 address
+
+Step 3: 
+
+Goto cpanel and update A name record of live.xyz.com by pasting the ip address and updating ttl as 3600 
+
+Step 4 :
+
+on droplet add a domain by clicking on add domain option and adding domain live.xyz.com to your droplet created.
+
+Step 5 :
+
+ping live.xyz.com see if it responds to your updated A name record or not if yes proceeed with installation process.
+
+Step 6 : 
+
+open cmd prompt and ssh root@ipaddress
+
+will ask to connect using your systems ssh keys (installation of ssh keys will be shown seperately)
+
+Step 7 : 
+
+use below command to execute the complete installation in one go . Please keep in mind the domain or subdomain should not have been installed with ssl earlier otherwise the process will not complete it is preferred to have a new fully qualtified domain name for the same to proceed ahead.
+
+
+wget -qO- https://ubuntu.bigbluebutton.org/bbb-install.sh | bash -s -- -v xenial-220 -s jycsmlive.in -e ssssumit8@gmail.com -g
+
+Customising the Greenlight/Bigbluebutton :
+
+1) mv greenlight/ greenlight-old  (renaming greenlight directory to different name because we cannot edit directly in greenlight installed by default)
+
+2) git clone https://github.com/bigbluebutton/greenlight.git  (cloning the greenlight directory from repository)
+
+3) Copy over your database file and .env file using these commands:
+
+cp ~/greenlight-old/.env ~/greenlight/.env
+sudo cp -r ~/greenlight-old/db ~/greenlight/
+
+4) Finally, restart Greenlight with: (cd greenlight) and then run below commands :
+
+Case A) When greenlight is installed for first time 
+
+i)    docker-compose down
+ii) ./scripts/image_build.sh bigbluebutton/greenlight release-v2
+iii)  docker-compose up -d  
+
+Above 3 lines have to be run everytime you even make a single chang in greenlight and want to reflect it.
+For the first time the docker will create the image and store it and it may take time in building the docker image which is done in above (ii) step but once it is built successfully once it does not takes such a long time . Please understand docker image is basically a backup of your earlier version so in case you have made any changes and you want to revert back to the earlier one you simply have to revert back to the earlier version.
+
+For the first time after step (ii) is performed you can goto cd greenlight and then perform this command 
+
+nano docker.yml and edit the name of the image to as "bigbluebutton/greenlight release-v1" in above second step save the file and exit
+
+So what we actually have done is we have actually created a new docker image with the name bigbluebutton/greenlight release-v1 and then update the docker image in the docker config file so that ruby can pick the docker content of that particular image. 
+
+If you run command "docker images" you will find a default docker image name as bigbluebutton/greenlight  v1 so it is a default image installed so for the first time we rebuild a new docker image in step(ii) and saved updated the dockey config file so that in case any issues are there in the new docker code we can revert back to the earlier image by simply udpating the image name in the docker.yml file again .
+
+B)When we are doing normal customisations :
+
+i)    docker-compose down
+ii) ./scripts/image_build.sh bigbluebutton/greenlight release-v1
+iii)  docker-compose up -d  
+
+
+5) Greenlight is based on ruby rails major code resides in /app/views/main/index.html.erb file 
+
+For editing the file you can use command "nano index.html.erb" will open the nano editor with all code simply edit the line of code you want to and save it by ctrl + o and enter and then exiting the code by ctrl + x 
+
+The more easy way to do it is by cloning the greenlight repository to local machine editing the file locally and then you push the file directly to the server using below command
+
+
+Copy files from local machine to server : (This command will run on local terminal sperately not on server terminal)
+
+scp -i /users/sumit-compaddicts/.ssh/id_rsa documents/greenlight/app/views/main/index.html.erb  root@:ipaddress//greenlight/app/views/main/
+
+Please keep a note that before uploading the command you should remove the old index.html.erb file to some other name like mv index.html.erb index1.html.erb 
+
+you can cross check by doing ls or ls -all
+
+And then execute the above copy command it will push the index.html.erb file from local machine to online server at the place you have choosen.
+
+Again just restart greenlight and check the changes after restarting the greenlight might be the server responds nginx error for 2 minutes restarting greenligt takes a bit time.
+
+
+6) Change the default welcome messageAnchor in bigbluebutton client meeting room :
+
+vi usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+
+You’ll find the two system-wide welcome parameters defaultWelcomeMessage and defaultWelcomeMessageFooter in the code in bigbluebutton.properties edit the text you want to.
+
+7) sudo bbb-conf --restart 
+
+If you change the parameters in bigbluebutton.properties, you must restart BigBlueButton with sudo bbb-conf --restart for the new values to take effect.
+
+8) To change the client meeting room title and about infomrations and copyight info edit the file :
+
+vi usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml 
+
+edit the line of code you want and save the file and exit.
+
+Dont forgot to restart the bigbluebutton server sudo bbb-conf --restart 
+
+9) Create Admin account or user account in greenight directly through rake
+
+To create an User account with specified values, in the Greenlight directory, run the following command:
+
+docker exec greenlight-v2 bundle exec rake user:create["name","email","password","user"]
+
+To create an Administrator account with the default values, in the Greenlight directory, run the following command:
+
+docker exec greenlight-v2 bundle exec rake admin:create
+
+If you would like to configure the name, email, or password of the Administrator account, replace the previous command with this:
+
+docker exec greenlight-v2 bundle exec rake user:create["name","email","password","admin"]
+
+
+Few more docker commands :
+
+docker-compose -v
+docker rmi golive:release-v1
+docker images
+
+
+
